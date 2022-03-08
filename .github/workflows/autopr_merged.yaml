@@ -1,0 +1,71 @@
+name: "Tag production releases"
+
+on: 
+  pull_request:
+    types: [closed]
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.merged && contains(github.event.pull_request.title, '[AUTO-PR]') }}
+    
+    steps:
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: main
+
+      - name: Checkout newly created prod tag
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.tag_version.outputs.new_tag }}
+
+      - name: Get current Prod Version
+        run: |
+          CURRENT_VERSION=`cat VERSION`
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Branch protection OFF
+        uses: octokit/request-action@v2.x
+        with:
+          route: PUT /repos/:repository/branches/main/protection
+          repository: ${{ github.repository }}
+          required_status_checks: |
+            null
+          enforce_admins: |
+            null
+          required_pull_request_reviews: |
+            null
+          restrictions: | 
+            null 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ACTIONS_REPO_ADMIN_CI_TOKEN }}
+
+      - name: Update version file
+        env:
+          NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
+          CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
+        run: source .github/scripts/bump_version.sh   
+
+      - name: Branch protection ON
+        uses: octokit/request-action@v2.x
+        with:
+          route: PUT /repos/:repository/branches/main/protection
+          repository: ${{ github.repository }}
+          mediaType: |
+            previews: 
+              - luke-cage
+          required_status_checks: |
+            strict: true
+            contexts:
+              - build
+          enforce_admins: |
+            true
+          required_pull_request_reviews: |
+            required_approving_review_count: 1
+          restrictions: | 
+            null 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ACTIONS_REPO_ADMIN_CI_TOKEN }}
