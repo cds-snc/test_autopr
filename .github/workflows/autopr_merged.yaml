@@ -17,10 +17,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           release_branches: main
 
-      - name: Checkout newly created prod tag
+      - name: Checkout newly merged pr
         uses: actions/checkout@v2
-        with:
-          ref: ${{ steps.tag_version.outputs.new_tag }}
 
       - name: Get current Prod Version
         run: |
@@ -60,8 +58,9 @@ jobs:
           NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
           CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
         run: |
+          pwd
           git add VERSION
-          git commit -m "Bump Version v${CURRENT_VERSION} -> ${NEW_VERSION}"
+          git commit -m "Bump Version ${CURRENT_VERSION} -> ${NEW_VERSION}"
           git push origin main
 
       - name: Branch protection ON
