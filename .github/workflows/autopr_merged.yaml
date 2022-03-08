@@ -47,7 +47,21 @@ jobs:
         env:
           NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
           CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
-        run: source .github/scripts/bump_version.sh   
+        run: |
+          echo $NEW_VERSION > VERSION
+
+    - name: setup git config
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+      - name: commit
+        env:
+          NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
+          CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
+        run: |
+          git add VERSION
+          git commit -m "Bump Version v${CURRENT_VERSION} -> ${NEW_VERSION}"
+          git push origin main
 
       - name: Branch protection ON
         uses: octokit/request-action@v2.x
