@@ -7,7 +7,7 @@ on:
 jobs:
   tag-release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged && contains(github.event.pull_request.title, '[AUTO-PR]') }}
+    if: ${{ github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged && contains(github.event.pull_request.title, '[AUTO-PR]') }}
     
     steps:
       - name: Bump version and push tag
@@ -58,6 +58,7 @@ jobs:
           NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
           CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
         run: |
+          pwd
           git add VERSION
           git commit -m "Bump Version ${CURRENT_VERSION} -> ${NEW_VERSION}"
           git push origin main
