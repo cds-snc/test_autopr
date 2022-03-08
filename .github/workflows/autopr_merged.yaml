@@ -64,6 +64,7 @@ jobs:
           git push origin main
 
       - name: Branch protection ON
+        if: always()
         uses: octokit/request-action@v2.x
         with:
           route: PUT /repos/:repository/branches/main/protection
