@@ -64,17 +64,11 @@ jobs:
           git push origin main
 
       - name: Branch protection ON
+        if: always()
         uses: octokit/request-action@v2.x
         with:
           route: PUT /repos/:repository/branches/main/protection
           repository: ${{ github.repository }}
-          mediaType: |
-            previews: 
-              - luke-cage
-          required_status_checks: |
-            strict: true
-            contexts:
-              - build
           enforce_admins: |
             true
           required_pull_request_reviews: |
