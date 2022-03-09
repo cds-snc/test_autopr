@@ -37,11 +37,13 @@ jobs:
           route: PUT /repos/:repository/branches/main/protection
           repository: ${{ github.repository }}
           required_status_checks: | 
-            null 
+            strict: true
+            contexts:
+              - testing_manifest 
           enforce_admins: |
             null
           required_pull_request_reviews: |
-            null
+            required_approving_review_count: 1
           restrictions: | 
             null 
         env:
@@ -75,7 +77,9 @@ jobs:
           route: PUT /repos/:repository/branches/main/protection
           repository: ${{ github.repository }}
           required_status_checks: | 
-            null 
+            strict: true
+            contexts:
+              - testing_manifest 
           enforce_admins: |
             true
           required_pull_request_reviews: |
