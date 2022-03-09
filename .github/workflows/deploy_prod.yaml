@@ -1,0 +1,33 @@
+name: "Merge to main (Production)"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "VERSION"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  kubectl-apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Prod Version
+        run: |
+          TARGET_VERSION=`cat VERSION`
+          echo "TARGET_VERSION=$TARGET_VERSION" >> $GITHUB_ENV
+
+      - name: Checkout target Prod version
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ env.TARGET_VERSION }}
+
+      - name: Deploy
+        run: echo $TARGET_VERSION deployed
