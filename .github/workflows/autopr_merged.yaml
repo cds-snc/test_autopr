@@ -1,4 +1,4 @@
-name: "Tag production releases"
+name: "Tag and release to production"
 
 on: 
   pull_request:
@@ -7,18 +7,26 @@ on:
 jobs:
   tag-release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged && contains(github.event.pull_request.title, '[AUTO-PR]') }}
+    if: ${{ github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged && (contains(github.event.pull_request.title, '[AUTO-PR]') || contains(github.event.pull_request.title, '[MANIFEST]')) }}
     
     steps:
+      - name: Obtain a Notify PR Bot GitHub App Installation Access Token
+        run: |
+          TOKEN="$(npx obtain-github-app-installation-access-token@1.1.0 ci ${{ secrets.GH_APP_CREDENTIALS_TOKEN }})"
+          echo "::add-mask::$TOKEN"
+          echo "GITHUB_TOKEN=$TOKEN" >> $GITHUB_ENV
+
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ env.GITHUB_TOKEN }}
           release_branches: main
 
       - name: Checkout newly merged pr
         uses: actions/checkout@v2
+        with:
+          ref: 'refs/pull/${{ github.event.number }}/merge'
 
       - name: Get current Prod Version
         run: |
@@ -39,7 +47,7 @@ jobs:
           restrictions: | 
             null 
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_ACTIONS_REPO_ADMIN_CI_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
       - name: Update version file
         env:
@@ -50,7 +58,7 @@ jobs:
 
       - name: setup git config
         run: |
-          git config user.name "GitHub Actions Bot"
+          git config user.name "Notify PR Bot"
           git config user.email "<>"
           
       - name: commit
@@ -58,9 +66,8 @@ jobs:
           NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
           CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
         run: |
-          pwd
           git add VERSION
-          git commit -m "Bump Version ${CURRENT_VERSION} -> ${NEW_VERSION}"
+          git commit -m "New release: ${CURRENT_VERSION} -> ${NEW_VERSION}"
           git push origin main
 
       - name: Branch protection ON
@@ -78,4 +85,4 @@ jobs:
           restrictions: | 
             null 
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_ACTIONS_REPO_ADMIN_CI_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
