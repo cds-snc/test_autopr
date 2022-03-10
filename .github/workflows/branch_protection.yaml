@@ -20,11 +20,13 @@ jobs:
         with:
           route: PUT /repos/:repository/branches/main/protection
           repository: ${{ github.repository }}
-          required_status_checks: "{'strict': true, 'checks': [{'context': 'required-check'}]}"
+          required_status_checks: |
+            strict: true
+            checks: [{'context': 'required-check'}]
           required_linear_history: |
             true
           enforce_admins: |
-            null
+            true
           required_pull_request_reviews: |
             required_approving_review_count: 1
           restrictions: |
