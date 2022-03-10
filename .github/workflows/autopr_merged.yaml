@@ -7,7 +7,7 @@ on:
 jobs:
   tag-release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged && (contains(github.event.pull_request.title, '[AUTO-PR]') || contains(github.event.pull_request.title, '[MANIFEST]')) }}
+    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged && (contains(github.event.pull_request.title, '[AUTO-PR]') || contains(github.event.pull_request.title, '[MANIFEST]'))
     
     steps:
       - name: Obtain a Notify PR Bot GitHub App Installation Access Token
@@ -33,24 +33,6 @@ jobs:
           CURRENT_VERSION=`cat VERSION`
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
-      - name: Branch protection OFF
-        uses: octokit/request-action@v2.x
-        with:
-          route: PUT /repos/:repository/branches/main/protection
-          repository: ${{ github.repository }}
-          required_status_checks: | 
-            strict: true
-            contexts:
-              - testing_manifest 
-          enforce_admins: |
-            null
-          required_pull_request_reviews: |
-            required_approving_review_count: 1
-          restrictions: | 
-            null 
-        env:
-          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
-
       - name: Update version file
         env:
           NEW_VERSION: ${{ steps.tag_version.outputs.new_tag }}
@@ -61,7 +43,26 @@ jobs:
       - name: setup git config
         run: |
           git config user.name "Notify PR Bot"
-          git config user.email "<>"
+          git config user.email "action@github.com"
+
+      - name: Branch protection OFF
+        uses: octokit/request-action@v2.x
+        with:
+          route: PUT /repos/:repository/branches/main/protection
+          repository: ${{ github.repository }}
+          required_status_checks: | 
+            strict: true,
+            checks: [{context: 'required-check'}]
+          required_linear_history: |
+            true
+          enforce_admins: |
+            null
+          required_pull_request_reviews: |
+            required_approving_review_count: 1
+          restrictions: | 
+            null 
+        env:
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           
       - name: commit
         env:
@@ -79,9 +80,10 @@ jobs:
           route: PUT /repos/:repository/branches/main/protection
           repository: ${{ github.repository }}
           required_status_checks: | 
-            strict: true
-            contexts:
-              - testing_manifest 
+            strict: true,
+            checks: [{context: 'required-check'}]
+          required_linear_history: |
+            true
           enforce_admins: |
             true
           required_pull_request_reviews: |
